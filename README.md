@@ -60,7 +60,7 @@ It is formatted like the below excerpt of [example.json](example.json).
         65, 68, 69, 80, 81, 84, 85
       ]
     }
-  }
+  ]
 }
 ```
 
