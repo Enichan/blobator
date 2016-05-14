@@ -21,7 +21,7 @@ Using blobator will create a tileset template with tiles of the specified size. 
 
 Blobator can also be used to assemble 47 tile blobs from 20 tile subblobs or 13 tile microblobs by using the '-source' command line option. Instead of generating a template using the built-in graphics, the half-size tiles contained in the sub or microblob will be used to assemble the tileset instead by combining 4 images per tile, one for each corner. Templates for sub and microblob source images designed for a 32 pixel size tileset are contained in the Templates folder.
 
-### Template Image ###
+### Template Image Example ###
 
 Blobator template images look like the following example. This is a tileset with tiles of size 32.
 
