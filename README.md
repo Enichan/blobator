@@ -126,7 +126,17 @@ else {
 }
 ```
 
-A similar overload for GetTile taking 8 boolean values also exists.
+A similar overload for GetTile taking 8 boolean values also exists. Alternately for nullable types the following code could also be used:
+
+```csharp
+// this index is out of range and will return null if TRegion is nullable
+if (tileset[-5] == null) {
+    Console.WriteLine("Not a valid region");
+}
+else {
+    // render image
+}
+```
 
 ## Motivation
 
