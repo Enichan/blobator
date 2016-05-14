@@ -23,7 +23,7 @@ Blobator can also be used to assemble 47 tile blobs from 20 tile subblobs or 13 
 
 ### Template Image ###
 
-Blobator template images look like the following example.
+Blobator template images look like the following example. This is a tileset with tiles of size 32.
 
 ![Blob tileset template example](example.png)
 
@@ -59,8 +59,7 @@ It is formatted like the below excerpt of [example.json](example.json).
         0, 1, 4, 5, 16, 17, 20, 21, 64, 
         65, 68, 69, 80, 81, 84, 85
       ]
-    },
-    (...)
+    }
   }
 }
 ```
