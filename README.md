@@ -114,7 +114,7 @@ region = tileset.GetTile( // get region from specified neighbors directly
     true, false, true, true, true, false, true, true);
 ```
 
-Keep in mind that when returning a tileset region of type TRegion, BlobTileset may return the default value for this type (or null if it is a nullable type) if the index is out of range or the supplied region cannot be found. All Blobator tilesets should have a region corresponding to every index in the 0 through 255 range, and so should generally return a valid region. However, there are safer overloads that can be used instead to test if the region is a valid value:
+Keep in mind that when returning a region BlobTileset may return the default value for this type (or null if it is a nullable type) if the index is out of range or the supplied region cannot be found. All Blobator tilesets should have a region corresponding to every index in the 0 through 255 range, and so should generally return a valid region. However, there are safer overloads that can be used instead to test if the region is a valid value:
 
 ```csharp
 // this index is out of range and will cause GetTile to return false
