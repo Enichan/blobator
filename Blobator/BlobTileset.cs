@@ -58,6 +58,10 @@ namespace Blobator.Tileset {
 
         public BlobTileset(Dictionary<string, dynamic> json) 
             : this() {
+            if (json == null) {
+                throw new ArgumentNullException("json", GetType().Name + " json was null");
+            }
+
             ImageFromJson(json);
             BitsFromJson(json);
             TilesFromJson(json);
