@@ -182,7 +182,7 @@ namespace Blobator.Tileset {
             return region;
         }
 
-        public bool GetTile(int index, out TRegion region) {
+        public virtual bool GetTile(int index, out TRegion region) {
             if (index < 0 || index > 255) {
                 region = default(TRegion);
                 return false;
