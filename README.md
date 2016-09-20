@@ -151,7 +151,9 @@ Blobator also supports the XML format. In order to output to XML format use the 
 
 ```csharp
 var tileset = new ExampleTileset(BlobTileset.FromXmlFile("example.xml"));
-``` 
+```
+
+For more details please see [example.xml](example.xml).
 
 ## Motivation
 
