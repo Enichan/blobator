@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Blobator.Tileset;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -88,49 +89,25 @@ namespace BlobatorTest {
             }
 
             if (tileset != null) {
-                Console.WriteLine("Testing image width/height");
-                if (tileset.Image.Width != 224 || tileset.Image.Height != 224) {
-                    Console.WriteLine("Failed: image size");
-                    Console.WriteLine("  Returned: " + tileset.Image.Width + "x" + tileset.Image.Height);
-                    Console.WriteLine("  Expected: 224x224");
-                    failed = true;
-                }
+                TestTileset(tileset, ref failed);
+            }
 
-                Console.WriteLine("Testing bit values");
-                for (int i = 0; i < 8; i++) {
-                    var expected = 1 << i;
-                    var value = tileset.Bits[i];
+            Console.WriteLine("Generating blobtest.png and blobtest.xml at size 32");
+            Blobator.Generator.Generate(32, "blobtest", xml: true);
 
-                    if (value != expected) {
-                        Console.WriteLine("Failed: bit at index " + i);
-                        Console.WriteLine("  Returned: " + value);
-                        Console.WriteLine("  Expected: " + expected);
-                        failed = true;
-                    }
-                }
+            Console.WriteLine("Loading blobtest.xml as TestTileset");
+            var xmlData = BlobTileset.FromXmlFile("blobtest.xml");
+            try {
+                tileset = new TestTileset(xmlData);
+            }
+            catch (Exception e) {
+                Console.WriteLine("Failed: " + e);
+                tileset = null;
+                failed = true;
+            }
 
-                Console.WriteLine("Testing index values");
-                foreach (var kvp in testValues) {
-                    if (tileset[kvp.Key] != kvp.Value) {
-                        Console.WriteLine("Failed: index " + kvp.Key);
-                        Console.WriteLine("  Returned: " + tileset[kvp.Key]);
-                        Console.WriteLine("  Expected: " + kvp.Value);
-                        failed = true;
-                    }
-                }
-
-                Console.WriteLine("Testing GetTile with boolean values");
-                foreach (var kvp in testBools) {
-                    var b = kvp.Key;
-                    var ret = tileset.GetTile(b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
-                    if (ret != kvp.Value) {
-                        Console.WriteLine("Failed:");
-                        Console.WriteLine("  Args: " + string.Join(", ", b));
-                        Console.WriteLine("  Returned: " + ret);
-                        Console.WriteLine("  Expected: " + kvp.Value);
-                        failed = true;
-                    }
-                }
+            if (tileset != null) {
+                TestTileset(tileset, ref failed);
             }
 
             if (failed) {
@@ -142,6 +119,52 @@ namespace BlobatorTest {
 
             Console.WriteLine("Hit any key to continue");
             Console.ReadKey();
+        }
+
+        static void TestTileset(TestTileset tileset, ref bool failed) {
+            Console.WriteLine("Testing image width/height");
+            if (tileset.Image.Width != 224 || tileset.Image.Height != 224) {
+                Console.WriteLine("Failed: image size");
+                Console.WriteLine("  Returned: " + tileset.Image.Width + "x" + tileset.Image.Height);
+                Console.WriteLine("  Expected: 224x224");
+                failed = true;
+            }
+
+            Console.WriteLine("Testing bit values");
+            for (int i = 0; i < 8; i++) {
+                var expected = 1 << i;
+                var value = tileset.Bits[i];
+
+                if (value != expected) {
+                    Console.WriteLine("Failed: bit at index " + i);
+                    Console.WriteLine("  Returned: " + value);
+                    Console.WriteLine("  Expected: " + expected);
+                    failed = true;
+                }
+            }
+
+            Console.WriteLine("Testing index values");
+            foreach (var kvp in testValues) {
+                if (tileset[kvp.Key] != kvp.Value) {
+                    Console.WriteLine("Failed: index " + kvp.Key);
+                    Console.WriteLine("  Returned: " + tileset[kvp.Key]);
+                    Console.WriteLine("  Expected: " + kvp.Value);
+                    failed = true;
+                }
+            }
+
+            Console.WriteLine("Testing GetTile with boolean values");
+            foreach (var kvp in testBools) {
+                var b = kvp.Key;
+                var ret = tileset.GetTile(b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
+                if (ret != kvp.Value) {
+                    Console.WriteLine("Failed:");
+                    Console.WriteLine("  Args: " + string.Join(", ", b));
+                    Console.WriteLine("  Returned: " + ret);
+                    Console.WriteLine("  Expected: " + kvp.Value);
+                    failed = true;
+                }
+            }
         }
     }
 }

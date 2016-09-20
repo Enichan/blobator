@@ -15,9 +15,10 @@ Options:
   -source <filename>: assemble tiles from subtiles
   -index: draw lowest tile index on template
   -font <family> <size>: specify font to use for text rendering
+  -xml: output xml instead of json
 ```
 
-Using blobator will create a tileset template with tiles of the specified size. It will create two files, a png file containing the tileset image, and a json file containing information on how to parse the image.
+Using blobator will create a tileset template with tiles of the specified size. It will create two files, a png file containing the tileset image, and a JSON or XML file containing information on how to parse the image.
 
 Blobator can also be used to assemble 47 tile blobs from 20 tile subblobs or 13 tile microblobs by using the '-source' command line option. Instead of generating a template using the built-in graphics, the half-size tiles contained in the sub or microblob will be used to assemble the tileset instead by combining 4 images per tile, one for each corner. Templates for sub and microblob source images designed for a 32 pixel size tileset are contained in the Templates folder.
 
@@ -94,6 +95,10 @@ namespace BlobatorExample {
         public ExampleTileset(string path)
             : base(path) {
         }
+
+        public ExampleTileset(Dictionary<string, dynamic> json)
+            : base(json) {
+        }
     }
 }
 ```
@@ -140,9 +145,17 @@ else {
 }
 ```
 
+## XML Output and Support
+
+Blobator also supports the XML format. In order to output to XML format use the '-xml' command line option. XML files are structured similarly to the JSON created by Blobator. XML files are also supported by the BlobTileset class by including the 'BlobTileset.Xml.cs' file as well as the standard 'BlobTileset.cs' file. To load the 'ExampleTileset' class from the example above from XML you could use the following code:
+
+```csharp
+var tileset = new ExampleTileset(BlobTileset.FromXmlFile("example.xml"));
+``` 
+
 ## Motivation
 
-While using the bitwise style of indexing using tile neighbors to figure out which tile to draw is an efficient way of rendering tiles, the implementation of both art assets as well as code can be finnicky. blobabor exists to ease this process.
+While using the bitwise style of indexing using tile neighbors to figure out which tile to draw is an efficient way of rendering tiles, the implementation of both art assets as well as code can be finnicky. Blobabor exists to ease this process.
 
 ## Tests
 

@@ -4,10 +4,12 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace Blobator.Json {
-    public class JsonTile {
-        public JsonRect Source { get; set; }
+    [XmlRoot("Tile")]
+    public class BlobTile {
+        public BlobRect Source { get; set; }
         public int[] Indices { get; set; }
     }
 }

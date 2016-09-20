@@ -53,11 +53,14 @@
     <Compile Include="BlobTileset.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
+    <Compile Include="BlobTileset.Xml.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
     <Compile Include="CommandLineArguments.cs" />
-    <Compile Include="Json\JsonBits.cs" />
-    <Compile Include="Json\JsonBlob.cs" />
-    <Compile Include="Json\JsonTile.cs" />
-    <Compile Include="Json\JsonRect.cs" />
+    <Compile Include="Json\BlobTileBits.cs" />
+    <Compile Include="Json\Blob.cs" />
+    <Compile Include="Json\BlobTile.cs" />
+    <Compile Include="Json\BlobRect.cs" />
     <Compile Include="Json\LowercaseContractResolver.cs" />
     <Compile Include="Generator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -6,20 +6,19 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Blobator.Tileset {
-    public class TilesetJsonException : Exception {
-        public TilesetJsonException()
+    public class TilesetDataException : Exception {
+        public TilesetDataException()
             : base() {
         }
-        public TilesetJsonException(string message)
+        public TilesetDataException(string message)
             : base(message) {
         }
-        public TilesetJsonException(string message, Exception innerException)
+        public TilesetDataException(string message, Exception innerException)
             : base(message, innerException) {
         }
     }
 
-    public abstract class BlobTileset<TImage, TRegion> {
-        #region Static
+    public abstract partial class BlobTileset {
         /// <summary>
         /// Default json deserializer. Requires a reference to System.Web.Extensions.
         /// </summary>
@@ -34,7 +33,10 @@ namespace Blobator.Tileset {
         public static Dictionary<string, dynamic> FromFile(string path) {
             return FromString(File.ReadAllText(path));
         }
+    }
 
+    public abstract class BlobTileset<TImage, TRegion> : BlobTileset {
+        #region Static
         /// <summary>
         /// In order of top left, top, top right, right, bottom right, bottom, bottom left, left
         /// </summary>
@@ -71,7 +73,7 @@ namespace Blobator.Tileset {
         protected virtual void ImageFromJson(Dictionary<string, dynamic> json) {
             dynamic imageJson;
             if (!json.TryGetValue("image", out imageJson)) {
-                throw new TilesetJsonException(
+                throw new TilesetDataException(
                     string.Format("Error deserializing {0} tiles: {1}",
                         GetType().Name, "image path not found.")
                 );
@@ -79,7 +81,7 @@ namespace Blobator.Tileset {
 
             var imagePath = imageJson as string;
             if (imagePath == null) {
-                throw new TilesetJsonException(
+                throw new TilesetDataException(
                     string.Format("Error deserializing {0} tiles: {1}",
                         GetType().Name, "image path was not a string value.")
                 );
@@ -102,7 +104,7 @@ namespace Blobator.Tileset {
                     bits[7] = bitsJson["left"];
                 }
                 catch (Exception e) {
-                    throw new TilesetJsonException(
+                    throw new TilesetDataException(
                         string.Format("Error deserializing {0} bits: {1}",
                             GetType().Name, e.Message),
                         e
@@ -114,7 +116,7 @@ namespace Blobator.Tileset {
         protected virtual void TilesFromJson(Dictionary<string, dynamic> json) {
             dynamic tilesJson;
             if (!json.TryGetValue("tiles", out tilesJson)) {
-                throw new TilesetJsonException(
+                throw new TilesetDataException(
                     string.Format("Error deserializing {0} tiles: {1}",
                         GetType().Name, "tiles section not found.")
                 );
@@ -131,7 +133,7 @@ namespace Blobator.Tileset {
                 }
             }
             catch (Exception e) {
-                throw new TilesetJsonException(
+                throw new TilesetDataException(
                     string.Format("Error deserializing {0} bits: {1}",
                         GetType().Name, e.Message),
                     e

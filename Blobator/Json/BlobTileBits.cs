@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace Blobator.Json {
-    public class JsonTileBits {
+    [XmlRoot("Bits")]
+    public class BlobTileBits {
         public int TopLeft { get; set; }
         public int Top { get; set; }
         public int TopRight { get; set; }
@@ -15,7 +17,7 @@ namespace Blobator.Json {
         public int BottomLeft { get; set; }
         public int Left { get; set; }
 
-        public JsonTileBits() {
+        public BlobTileBits() {
             TopLeft = (int)TileBits.TopLeft;
             Top = (int)TileBits.Top;
             TopRight = (int)TileBits.TopRight;

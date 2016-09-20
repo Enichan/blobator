@@ -4,11 +4,14 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace Blobator.Json {
-    public class JsonBlob {
+    [XmlRoot("Tileset")]
+    public class Blob {
         public string Image { get; set; }
-        public JsonTileBits Bits { get; set; }
-        public JsonTile[] Tiles { get; set; }
+        public BlobTileBits Bits { get; set; }
+        [XmlArrayItem("Tile")]
+        public BlobTile[] Tiles { get; set; }
     }
 }

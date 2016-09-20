@@ -115,6 +115,7 @@ namespace Blobator {
                 Console.WriteLine("  -source <filename>: assemble tiles from subtiles");
                 Console.WriteLine("  -index: draw lowest tile index on template");
                 Console.WriteLine("  -font <family> <size>: specify font to use for text rendering");
+                Console.WriteLine("  -xml: output xml instead of json");
                 return;
             }
 
@@ -126,6 +127,7 @@ namespace Blobator {
             string source = null;
             var indexed = false;
             var fontFamily = "Times New Roman";
+            var xml = false;
 
             if (args.Count > 0) {
                 size = Int32.Parse(args[0]);
@@ -166,18 +168,21 @@ namespace Blobator {
                         continue;
                     }
                 }
+                if (arg == "-xml") {
+                    xml = true;
+                }
             }
 
-            try {
-                Generate(size, filename, powerOfTwo, indented, source, indexed, fontFamily);
-            }
-            catch (Exception e) {
-                Console.WriteLine("Error: " + e.Message);
-                Console.WriteLine("Aborting");
-            }
+            //try {
+                Generate(size, filename, powerOfTwo, indented, source, indexed, fontFamily, xml);
+            //}
+            //catch (Exception e) {
+            //    Console.WriteLine("Error: " + e.Message);
+            //    Console.WriteLine("Aborting");
+            //}
         }
 
-        public static void Generate(int size, string path, bool powerOfTwo = false, bool indented = false, string source = null, bool indexed = false, string fontFamily = "Times New Roman") {
+        public static void Generate(int size, string path, bool powerOfTwo = false, bool indented = false, string source = null, bool indexed = false, string fontFamily = "Times New Roman", bool xml = false) {
             var images = GetParts(size);
             var uniques = new HashSet<int>();
             var duplicates = new Dictionary<int, int>();
@@ -226,9 +231,9 @@ namespace Blobator {
             int x = 0, y = 0;
             int tileIndex = 0;
 
-            var json = new JsonBlob();
-            json.Tiles = new JsonTile[47];
-            json.Bits = new JsonTileBits();
+            var json = new Blob();
+            json.Tiles = new BlobTile[47];
+            json.Bits = new BlobTileBits();
 
             using (var blobGfx = Graphics.FromImage(blob)) {
                 blobGfx.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
@@ -329,8 +334,8 @@ namespace Blobator {
                         }
                    }
 
-                    json.Tiles[tileIndex] = new JsonTile() {
-                        Source = new JsonRect(x, y, size, size),
+                    json.Tiles[tileIndex] = new BlobTile() {
+                        Source = new BlobRect(x, y, size, size),
                         Indices = new List<int>() { index }.Concat(from dup in duplicates where dup.Value == index select dup.Key).ToArray()
                     };
                     tileIndex++;
@@ -346,16 +351,40 @@ namespace Blobator {
             blob.Save(path + ".png", ImageFormat.Png);
             json.Image = path + ".png";
 
-            File.WriteAllText(
-                path + ".json",
-                JsonConvert.SerializeObject(
-                    json,
-                    indented ? Formatting.Indented : Formatting.None,
-                    new JsonSerializerSettings() {
-                        ContractResolver = new CamelCasePropertyNamesContractResolver()
+            if (!xml) {
+                File.WriteAllText(
+                    path + ".json",
+                    JsonConvert.SerializeObject(
+                        json,
+                        indented ? Formatting.Indented : Formatting.None,
+                        new JsonSerializerSettings() {
+                            ContractResolver = new CamelCasePropertyNamesContractResolver()
+                        }
+                    )
+                );
+            }
+            else {
+                using (var stream = File.Open(path + ".xml", FileMode.Create)) {
+                    var serializer = new XmlSerializer(json.GetType());
+                    if (!indented) {
+                        using (var xmlWriter = System.Xml.XmlWriter.Create(stream, 
+                            new System.Xml.XmlWriterSettings() { 
+                                Indent = false, 
+                                NewLineHandling = System.Xml.NewLineHandling.None 
+                            })) {
+                            serializer.Serialize(xmlWriter, json);
+                        }
                     }
-                )
-            );
+                    else {
+                        serializer.Serialize(stream, json);
+                    }
+                }
+            }
+
+            blob.Dispose();
+            foreach (var part in parts) {
+                part.Dispose();
+            }
         }
 
         static void GetSets(HashSet<int> uniques, Dictionary<int, int> duplicates) {
