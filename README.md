@@ -4,6 +4,10 @@ Blobator creates 47 tile 'blob' tilesets, either as templates or by assembling f
 
 Download a [zipped version of the binaries](Blobator.zip) or clone this repository to build the project.
 
+## Sample (Isometric)
+
+![Sample (Isometric)](sample.png)
+
 ## Command Line Usage
 
 ```
@@ -16,11 +20,14 @@ Options:
   -index: draw lowest tile index on template
   -font <family> <size>: specify font to use for text rendering
   -xml: output xml instead of json
+  -iso: isometric mode
 ```
 
 Using blobator will create a tileset template with tiles of the specified size. It will create two files, a png file containing the tileset image, and a JSON or XML file containing information on how to parse the image.
 
 Blobator can also be used to assemble 47 tile blobs from 20 tile subblobs or 13 tile microblobs by using the '-source' command line option. Instead of generating a template using the built-in graphics, the half-size tiles contained in the sub or microblob will be used to assemble the tileset instead by combining 4 images per tile, one for each corner. Templates for sub and microblob source images designed for a 32 pixel size tileset are contained in the Templates folder.
+
+Note that currently the '-iso' argument must be used with the '-source' argument.
 
 ### Template Image Example ###
 

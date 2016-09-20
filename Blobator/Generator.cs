@@ -116,6 +116,7 @@ namespace Blobator {
                 Console.WriteLine("  -index: draw lowest tile index on template");
                 Console.WriteLine("  -font <family> <size>: specify font to use for text rendering");
                 Console.WriteLine("  -xml: output xml instead of json");
+                Console.WriteLine("  -iso: isometric mode");
                 return;
             }
 
@@ -128,6 +129,7 @@ namespace Blobator {
             var indexed = false;
             var fontFamily = "Times New Roman";
             var xml = false;
+            var isometric = false;
 
             if (args.Count > 0) {
                 size = Int32.Parse(args[0]);
@@ -171,18 +173,21 @@ namespace Blobator {
                 if (arg == "-xml") {
                     xml = true;
                 }
+                if (arg == "-iso") {
+                    isometric = true;
+                }
             }
 
-            //try {
-                Generate(size, filename, powerOfTwo, indented, source, indexed, fontFamily, xml);
-            //}
-            //catch (Exception e) {
-            //    Console.WriteLine("Error: " + e.Message);
-            //    Console.WriteLine("Aborting");
-            //}
+            try {
+                Generate(size, filename, powerOfTwo, indented, source, indexed, fontFamily, xml, isometric);
+            }
+            catch (Exception e) {
+                Console.WriteLine("Error: " + e.Message);
+                Console.WriteLine("Aborting");
+            }
         }
 
-        public static void Generate(int size, string path, bool powerOfTwo = false, bool indented = false, string source = null, bool indexed = false, string fontFamily = "Times New Roman", bool xml = false) {
+        public static void Generate(int size, string path, bool powerOfTwo = false, bool indented = false, string source = null, bool indexed = false, string fontFamily = "Times New Roman", bool xml = false, bool isometric = false) {
             var images = GetParts(size);
             var uniques = new HashSet<int>();
             var duplicates = new Dictionary<int, int>();
@@ -191,13 +196,16 @@ namespace Blobator {
 
             List<Bitmap> parts;
             if (source == null) {
+                if (isometric) {
+                    throw new NotImplementedException("Please use -source when using -iso");
+                }
                 parts = GetParts(size / 2);
             }
             else {
                 if (!File.Exists(source)) {
                     throw new Exception("Could not find source file '" + source + "'");
                 }
-                parts = GetParts(source, size / 2);
+                parts = GetParts(source, size / 2, isometric);
             }
             var micro = parts.Count < 20;
 
@@ -216,6 +224,10 @@ namespace Blobator {
                 var rows = 47 / imagesPerRow;
                 var minimumHeight = rows * size;
 
+                if (isometric) {
+                    minimumHeight /= 2;
+                }
+
                 power = 0;
                 while (Math.Pow(2, power) < minimumHeight) {
                     power++;
@@ -225,7 +237,7 @@ namespace Blobator {
                 blob = new Bitmap(width, height);
             }
             else {
-                blob = new Bitmap(7 * size, 7 * size);
+                blob = new Bitmap(7 * size, (7 * size) / (isometric ? 2 : 1));
             }
 
             int x = 0, y = 0;
@@ -245,82 +257,174 @@ namespace Blobator {
                     var bottom = (index & Bottom) == Bottom;
                     var left = (index & Left) == Left;
 
-                    using (var img = new Bitmap(size, size)) {
+                    using (var img = new Bitmap(size, isometric ? size / 2 : size)) {
                         using (var gfx = Graphics.FromImage(img)) {
-                            // topleft part
-                            if (top && left) {
-                                if ((index & TopLeft) == TopLeft) {
-                                    gfx.DrawImage(parts[micro ? (int)PartMicro.Full : (int)Part.TL_Full], 0, 0);
-                                }
-                                else {
-                                    gfx.DrawImage(parts[micro ? (int)PartMicro.TL_CornerInner : (int)Part.TL_CornerInner], 0, 0);
-                                }
-                            }
-                            else if (top) {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.TL_BL_EdgeVertical : (int)Part.TL_EdgeVertical], 0, 0);
-                            }
-                            else if (left) {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.TL_TR_EdgeHorizontal : (int)Part.TL_EdgeHorizontal], 0, 0);
-                            }
-                            else {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.TL_CornerOuter : (int)Part.TL_CornerOuter], 0, 0);
-                            }
+                            Bitmap part;
 
-                            // topright part
-                            if (top && right) {
-                                if ((index & TopRight) == TopRight) {
-                                    gfx.DrawImage(parts[micro ? (int)PartMicro.Full : (int)Part.TR_Full], size / 2, 0);
-                                }
-                                else {
-                                    gfx.DrawImage(parts[micro ? (int)PartMicro.TR_CornerInner : (int)Part.TR_CornerInner], size / 2, 0);
-                                }
-                            }
-                            else if (top) {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.TR_BR_EdgeVertical : (int)Part.TR_EdgeVertical], size / 2, 0);
-                            }
-                            else if (right) {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.TL_TR_EdgeHorizontal : (int)Part.TR_EdgeHorizontal], size / 2, 0);
-                            }
-                            else {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.TR_CornerOuter : (int)Part.TR_CornerOuter], size / 2, 0);
-                            }
+                            if (isometric) {
+                                var xSize = size;
+                                var ySize = size / 2;
 
-                            // bottomleft part
-                            if (bottom && left) {
-                                if ((index & BottomLeft) == BottomLeft) {
-                                    gfx.DrawImage(parts[micro ? (int)PartMicro.Full : (int)Part.BL_Full], 0, size / 2);
+                                // topleft part
+                                if (top && left) {
+                                    if ((index & TopLeft) == TopLeft) {
+                                        part = parts[micro ? (int)PartMicro.Full : (int)Part.TL_Full];
+                                    }
+                                    else {
+                                        part = parts[micro ? (int)PartMicro.TL_CornerInner : (int)Part.TL_CornerInner];
+                                    }
+                                }
+                                else if (top) {
+                                    part = parts[micro ? (int)PartMicro.TL_BL_EdgeVertical : (int)Part.TL_EdgeVertical];
+                                }
+                                else if (left) {
+                                    part = parts[micro ? (int)PartMicro.TL_TR_EdgeHorizontal : (int)Part.TL_EdgeHorizontal];
                                 }
                                 else {
-                                    gfx.DrawImage(parts[micro ? (int)PartMicro.BL_CornerInner : (int)Part.BL_CornerInner], 0, size / 2);
+                                    part = parts[micro ? (int)PartMicro.TL_CornerOuter : (int)Part.TL_CornerOuter];
                                 }
-                            }
-                            else if (bottom) {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.TL_BL_EdgeVertical : (int)Part.BL_EdgeVertical], 0, size / 2);
-                            }
-                            else if (left) {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.BL_BR_EdgeHorizontal : (int)Part.BL_EdgeHorizontal], 0, size / 2);
-                            }
-                            else {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.BL_CornerOuter : (int)Part.BL_CornerOuter], 0, size / 2);
-                            }
+                                gfx.DrawImage(part, xSize / 4, 0);
 
-                            // bottomright part
-                            if (bottom && right) {
-                                if ((index & BottomRight) == BottomRight) {
-                                    gfx.DrawImage(parts[micro ? (int)PartMicro.Full : (int)Part.BR_Full], size / 2, size / 2);
+                                // topright part
+                                if (top && right) {
+                                    if ((index & TopRight) == TopRight) {
+                                        part = parts[micro ? (int)PartMicro.Full : (int)Part.TR_Full];
+                                    }
+                                    else {
+                                        part = parts[micro ? (int)PartMicro.TR_CornerInner : (int)Part.TR_CornerInner];
+                                    }
+                                }
+                                else if (top) {
+                                    part = parts[micro ? (int)PartMicro.TR_BR_EdgeVertical : (int)Part.TR_EdgeVertical];
+                                }
+                                else if (right) {
+                                    part = parts[micro ? (int)PartMicro.TL_TR_EdgeHorizontal : (int)Part.TR_EdgeHorizontal];
                                 }
                                 else {
-                                    gfx.DrawImage(parts[micro ? (int)PartMicro.BR_CornerInner : (int)Part.BR_CornerInner], size / 2, size / 2);
+                                    part = parts[micro ? (int)PartMicro.TR_CornerOuter : (int)Part.TR_CornerOuter];
                                 }
-                            }
-                            else if (bottom) {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.TR_BR_EdgeVertical : (int)Part.BR_EdgeVertical], size / 2, size / 2);
-                            }
-                            else if (right) {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.BL_BR_EdgeHorizontal : (int)Part.BR_EdgeHorizontal], size / 2, size / 2);
+                                gfx.DrawImage(part, xSize / 2, ySize / 4);
+
+                                // bottomleft part
+                                if (bottom && left) {
+                                    if ((index & BottomLeft) == BottomLeft) {
+                                        part = parts[micro ? (int)PartMicro.Full : (int)Part.BL_Full];
+                                    }
+                                    else {
+                                        part = parts[micro ? (int)PartMicro.BL_CornerInner : (int)Part.BL_CornerInner];
+                                    }
+                                }
+                                else if (bottom) {
+                                    part = parts[micro ? (int)PartMicro.TL_BL_EdgeVertical : (int)Part.BL_EdgeVertical];
+                                }
+                                else if (left) {
+                                    part = parts[micro ? (int)PartMicro.BL_BR_EdgeHorizontal : (int)Part.BL_EdgeHorizontal];
+                                }
+                                else {
+                                    part = parts[micro ? (int)PartMicro.BL_CornerOuter : (int)Part.BL_CornerOuter];
+                                }
+                                gfx.DrawImage(part, 0, ySize / 4);
+
+                                // bottomright part
+                                if (bottom && right) {
+                                    if ((index & BottomRight) == BottomRight) {
+                                        part = parts[micro ? (int)PartMicro.Full : (int)Part.BR_Full];
+                                    }
+                                    else {
+                                        part = parts[micro ? (int)PartMicro.BR_CornerInner : (int)Part.BR_CornerInner];
+                                    }
+                                }
+                                else if (bottom) {
+                                    part = parts[micro ? (int)PartMicro.TR_BR_EdgeVertical : (int)Part.BR_EdgeVertical];
+                                }
+                                else if (right) {
+                                    part = parts[micro ? (int)PartMicro.BL_BR_EdgeHorizontal : (int)Part.BR_EdgeHorizontal];
+                                }
+                                else {
+                                    part = parts[micro ? (int)PartMicro.BR_CornerOuter : (int)Part.BR_CornerOuter];
+                                }
+                                gfx.DrawImage(part, xSize / 4, ySize / 2);
                             }
                             else {
-                                gfx.DrawImage(parts[micro ? (int)PartMicro.BR_CornerOuter : (int)Part.BR_CornerOuter], size / 2, size / 2);
+                                // topleft part
+                                if (top && left) {
+                                    if ((index & TopLeft) == TopLeft) {
+                                        part = parts[micro ? (int)PartMicro.Full : (int)Part.TL_Full];
+                                    }
+                                    else {
+                                        part = parts[micro ? (int)PartMicro.TL_CornerInner : (int)Part.TL_CornerInner];
+                                    }
+                                }
+                                else if (top) {
+                                    part = parts[micro ? (int)PartMicro.TL_BL_EdgeVertical : (int)Part.TL_EdgeVertical];
+                                }
+                                else if (left) {
+                                    part = parts[micro ? (int)PartMicro.TL_TR_EdgeHorizontal : (int)Part.TL_EdgeHorizontal];
+                                }
+                                else {
+                                    part = parts[micro ? (int)PartMicro.TL_CornerOuter : (int)Part.TL_CornerOuter];
+                                }
+                                gfx.DrawImage(part, 0, 0);
+
+                                // topright part
+                                if (top && right) {
+                                    if ((index & TopRight) == TopRight) {
+                                        part = parts[micro ? (int)PartMicro.Full : (int)Part.TR_Full];
+                                    }
+                                    else {
+                                        part = parts[micro ? (int)PartMicro.TR_CornerInner : (int)Part.TR_CornerInner];
+                                    }
+                                }
+                                else if (top) {
+                                    part = parts[micro ? (int)PartMicro.TR_BR_EdgeVertical : (int)Part.TR_EdgeVertical];
+                                }
+                                else if (right) {
+                                    part = parts[micro ? (int)PartMicro.TL_TR_EdgeHorizontal : (int)Part.TR_EdgeHorizontal];
+                                }
+                                else {
+                                    part = parts[micro ? (int)PartMicro.TR_CornerOuter : (int)Part.TR_CornerOuter];
+                                }
+                                gfx.DrawImage(part, size / 2, 0);
+
+                                // bottomleft part
+                                if (bottom && left) {
+                                    if ((index & BottomLeft) == BottomLeft) {
+                                        part = parts[micro ? (int)PartMicro.Full : (int)Part.BL_Full];
+                                    }
+                                    else {
+                                        part = parts[micro ? (int)PartMicro.BL_CornerInner : (int)Part.BL_CornerInner];
+                                    }
+                                }
+                                else if (bottom) {
+                                    part = parts[micro ? (int)PartMicro.TL_BL_EdgeVertical : (int)Part.BL_EdgeVertical];
+                                }
+                                else if (left) {
+                                    part = parts[micro ? (int)PartMicro.BL_BR_EdgeHorizontal : (int)Part.BL_EdgeHorizontal];
+                                }
+                                else {
+                                    part = parts[micro ? (int)PartMicro.BL_CornerOuter : (int)Part.BL_CornerOuter];
+                                }
+                                gfx.DrawImage(part, 0, size / 2);
+
+                                // bottomright part
+                                if (bottom && right) {
+                                    if ((index & BottomRight) == BottomRight) {
+                                        part = parts[micro ? (int)PartMicro.Full : (int)Part.BR_Full];
+                                    }
+                                    else {
+                                        part = parts[micro ? (int)PartMicro.BR_CornerInner : (int)Part.BR_CornerInner];
+                                    }
+                                }
+                                else if (bottom) {
+                                    part = parts[micro ? (int)PartMicro.TR_BR_EdgeVertical : (int)Part.BR_EdgeVertical];
+                                }
+                                else if (right) {
+                                    part = parts[micro ? (int)PartMicro.BL_BR_EdgeHorizontal : (int)Part.BR_EdgeHorizontal];
+                                }
+                                else {
+                                    part = parts[micro ? (int)PartMicro.BR_CornerOuter : (int)Part.BR_CornerOuter];
+                                }
+                                gfx.DrawImage(part, size / 2, size / 2);
                             }
                         }
 
@@ -329,13 +433,16 @@ namespace Blobator {
                         if (indexed) {
                             var text = index.ToString(CultureInfo.InvariantCulture);
                             var textSize = blobGfx.MeasureString(text, font);
+                            var width = size;
+                            var height = isometric ? size / 2 : size;
+
                             blobGfx.DrawString(text, font, Brushes.Black,
-                                new PointF(x + (float)size / 2 - textSize.Width / 2, y + (float)size / 2 - textSize.Height / 2));
+                                new PointF(x + (float)width / 2 - textSize.Width / 2, y + (float)height / 2 - textSize.Height / 2));
                         }
                    }
 
                     json.Tiles[tileIndex] = new BlobTile() {
-                        Source = new BlobRect(x, y, size, size),
+                        Source = new BlobRect(x, y, size, isometric ? size / 2 : size),
                         Indices = new List<int>() { index }.Concat(from dup in duplicates where dup.Value == index select dup.Key).ToArray()
                     };
                     tileIndex++;
@@ -343,7 +450,7 @@ namespace Blobator {
                     x += size;
                     if (x >= blob.Width) {
                         x = 0;
-                        y += size;
+                        y += isometric ? size / 2 : size;
                     }
                 }
             }
@@ -415,63 +522,74 @@ namespace Blobator {
             }
         }
 
-        static List<Bitmap> GetParts(string source, int size) {
+        static List<Bitmap> GetParts(string source, int size, bool isometric) {
             var baseImg = (Bitmap)Image.FromFile(source);
+            var imageWidth = 3 * size;
+            var imageHeight = isometric ? (5 * size) / 2 : 5 * size;
 
-            if (baseImg.Width < 3 * size || baseImg.Height < 5 * size) {
-                throw new Exception("Insufficient source file size, must be at least " + (3 * size) + "x" + (5 * size) + ", was " + baseImg.Width + "x" + baseImg.Height);
+            if (baseImg.Width < imageWidth || baseImg.Height < imageHeight) {
+                throw new Exception("Insufficient source file size, must be at least " + imageWidth + "x" + imageHeight + ", was " + baseImg.Width + "x" + baseImg.Height);
             }
 
-            bool micro = baseImg.Width < 4 * size || baseImg.Height < 6 * size;
+            var macroWidth = 4 * size;
+            var macroHeight = isometric ? (6 * size) / 2 : 6 * size;
+            bool micro = baseImg.Width < macroWidth || baseImg.Height < macroHeight;
+            List<Bitmap> ret;
+
+            var xSize = size;
+            var ySize = isometric ? size / 2 : size;
 
             if (micro) {
-                return new List<Bitmap>() {
-                    CreateImage(size, baseImg, size, 0),
-                    CreateImage(size, baseImg, size * 2, 0),
-                    CreateImage(size, baseImg, size, size),
-                    CreateImage(size, baseImg, size * 2, size),
+                ret = new List<Bitmap>() {
+                    CreateImage(xSize, ySize, baseImg, xSize, 0),
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, 0),
+                    CreateImage(xSize, ySize, baseImg, xSize, ySize),
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, ySize),
 
-                    CreateImage(size, baseImg, 0, size * 2),
-                    CreateImage(size, baseImg, size, size * 2),
-                    CreateImage(size, baseImg, size * 2, size * 2),
+                    CreateImage(xSize, ySize, baseImg, 0, ySize * 2),
+                    CreateImage(xSize, ySize, baseImg, xSize, ySize * 2),
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, ySize * 2),
 
-                    CreateImage(size, baseImg, 0, size * 3),
-                    CreateImage(size, baseImg, size, size * 3),
-                    CreateImage(size, baseImg, size * 2, size * 3),
+                    CreateImage(xSize, ySize, baseImg, 0, ySize * 3),
+                    CreateImage(xSize, ySize, baseImg, xSize, ySize * 3),
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, ySize * 3),
 
-                    CreateImage(size, baseImg, 0, size * 4),
-                    CreateImage(size, baseImg, size, size * 4),
-                    CreateImage(size, baseImg, size * 2, size * 4),
+                    CreateImage(xSize, ySize, baseImg, 0, ySize * 4),
+                    CreateImage(xSize, ySize, baseImg, xSize, ySize * 4),
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, ySize * 4),
                 };
             }
             else {
-                return new List<Bitmap>() {
-                    CreateImage(size, baseImg, size * 2, 0),
-                    CreateImage(size, baseImg, size * 3, 0),
-                    CreateImage(size, baseImg, size * 2, size),
-                    CreateImage(size, baseImg, size * 3, size),
+                ret = new List<Bitmap>() {
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, 0),
+                    CreateImage(xSize, ySize, baseImg, xSize * 3, 0),
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, ySize),
+                    CreateImage(xSize, ySize, baseImg, xSize * 3, ySize),
 
-                    CreateImage(size, baseImg, 0, size * 2),
-                    CreateImage(size, baseImg, size, size * 2),
-                    CreateImage(size, baseImg, size * 2, size * 2),
-                    CreateImage(size, baseImg, size * 3, size * 2),
+                    CreateImage(xSize, ySize, baseImg, 0, ySize * 2),
+                    CreateImage(xSize, ySize, baseImg, xSize, ySize * 2),
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, ySize * 2),
+                    CreateImage(xSize, ySize, baseImg, xSize * 3, ySize * 2),
 
-                    CreateImage(size, baseImg, 0, size * 3),
-                    CreateImage(size, baseImg, size, size * 3),
-                    CreateImage(size, baseImg, size * 2, size * 3),
-                    CreateImage(size, baseImg, size * 3, size * 3),
+                    CreateImage(xSize, ySize, baseImg, 0, ySize * 3),
+                    CreateImage(xSize, ySize, baseImg, xSize, ySize * 3),
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, ySize * 3),
+                    CreateImage(xSize, ySize, baseImg, xSize * 3, ySize * 3),
 
-                    CreateImage(size, baseImg, 0, size * 4),
-                    CreateImage(size, baseImg, size, size * 4),
-                    CreateImage(size, baseImg, size * 2, size * 4),
-                    CreateImage(size, baseImg, size * 3, size * 4),
+                    CreateImage(xSize, ySize, baseImg, 0, ySize * 4),
+                    CreateImage(xSize, ySize, baseImg, xSize, ySize * 4),
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, ySize * 4),
+                    CreateImage(xSize, ySize, baseImg, xSize * 3, ySize * 4),
 
-                    CreateImage(size, baseImg, 0, size * 5),
-                    CreateImage(size, baseImg, size, size * 5),
-                    CreateImage(size, baseImg, size * 2, size * 5),
-                    CreateImage(size, baseImg, size * 3, size * 5),
+                    CreateImage(xSize, ySize, baseImg, 0, ySize * 5),
+                    CreateImage(xSize, ySize, baseImg, xSize, ySize * 5),
+                    CreateImage(xSize, ySize, baseImg, xSize * 2, ySize * 5),
+                    CreateImage(xSize, ySize, baseImg, xSize * 3, ySize * 5),
                 };
             }
+
+            baseImg.Dispose();
+            return ret;
         }
 
         static List<Bitmap> GetParts(int size) {
@@ -497,14 +615,18 @@ namespace Blobator {
         }
 
         static Bitmap CreateImage(int size, Bitmap source, int x, int y) {
+            return CreateImage(size, size, source, x, y);
+        }
+
+        static Bitmap CreateImage(int width, int height, Bitmap source, int x, int y) {
             Bitmap img;
             Graphics gfx;
 
-            img = new Bitmap(size, size);
+            img = new Bitmap(width, height);
             using (gfx = Graphics.FromImage(img)) {
-                gfx.DrawImage(source, 
-                    new Rectangle(0, 0, size, size),
-                    new Rectangle(x, y, size, size),
+                gfx.DrawImage(source,
+                    new Rectangle(0, 0, width, height),
+                    new Rectangle(x, y, width, height),
                     GraphicsUnit.Pixel
                 );
             }

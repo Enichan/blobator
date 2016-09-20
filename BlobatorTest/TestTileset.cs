@@ -13,7 +13,11 @@ namespace BlobatorTest {
                 // see https://support.microsoft.com/en-us/kb/814675 for details
                 var dest = new Bitmap(bmp.Width, bmp.Height);
                 using (var graphics = Graphics.FromImage(dest)) {
-                    graphics.DrawImage(bmp, new Rectangle(0, 0, dest.Width, dest.Height));
+                    graphics.DrawImage(bmp,
+                        new Rectangle(0, 0, dest.Width, dest.Height),
+                        new Rectangle(0, 0, bmp.Width, bmp.Height),
+                        GraphicsUnit.Pixel
+                    );
                 }
                 bmp.Dispose();
                 return dest;
