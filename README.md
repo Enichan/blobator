@@ -1,181 +1,69 @@
-## Blobator
+# Twine Reparagrapher
+Wraps blocks of text in Twine in &lt;p&gt; (paragraph) HTML elements automatically by hooking into postrender, going through all nodes inside the new passage, and adding &lt;p&gt;&lt;/p&gt; tags around non-empty blocks of text followed by a &lt;br&gt; tag.
 
-Blobator creates 47 tile 'blob' tilesets, either as templates or by assembling from sub or microblobs. For an explanation of the concepts involved please read [this post](http://personal.boristhebrave.com/tutorials/tileset-roundup), although the details of implementation differ somewhat for blobator. In short, these 47 tile blobs can be used to easily render terrain by assigning bit values to the surrounding neighbors of the same type as the tile being inspected, using bitwise OR operations to add the values together producing a 0-255 index which points to one of the tiles in the blob.
+Tested with SugarCube 2.18.0 in Twine 2.1.3.
 
-Download a [zipped version of the binaries](Blobator.zip) or clone this repository to build the project.
+## Usage
 
-## Sample (Isometric)
+Copy the contents of twine_reparagrapher.js into your story's javascript.
 
-![Sample (Isometric)](sample.png)
+## Example
 
-## Command Line Usage
+**Raw passage text:**
 
-```
-Usage: blobator.exe <size> <filename without extension>
-  If filename is unspecified, 'blob' is used.
-Options:
-  -pow2, -poweroftwo: fit output image to power of 2 size
-  -indent, -indented: indent json output
-  -source <filename>: assemble tiles from subtiles
-  -index: draw lowest tile index on template
-  -font <family> <size>: specify font to use for text rendering
-  -xml: output xml instead of json
-  -iso: isometric mode
-```
+> Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+> 
+> Duis ac lectus nunc. Ut porta vestibulum placerat.
+> 
+> Curabitur ullamcorper urna sed magna rhoncus, in accumsan ante congue.
 
-Using blobator will create a tileset template with tiles of the specified size. It will create two files, a png file containing the tileset image, and a JSON or XML file containing information on how to parse the image.
+**Normal HTML when displayed:**
 
-Blobator can also be used to assemble 47 tile blobs from 20 tile subblobs or 13 tile microblobs by using the '-source' command line option. Instead of generating a template using the built-in graphics, the half-size tiles contained in the sub or microblob will be used to assemble the tileset instead by combining 4 images per tile, one for each corner. Templates for sub and microblob source images designed for a 32 pixel size tileset are contained in the Templates folder.
+> Lorem ipsum dolor sit amet, consectetur adipiscing elit.&lt;br&gt;  
+> &lt;br&gt;  
+> Duis ac lectus nunc. Ut porta vestibulum placerat.&lt;br&gt;  
+> &lt;br&gt;  
+> Curabitur ullamcorper urna sed magna rhoncus, in accumsan ante congue.&lt;br&gt;
 
-Note that currently the '-iso' argument must be used with the '-source' argument.
+**HTML after reparagrapher:**
 
-### Template Image Example ###
+> &lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit.&lt;/p&gt;  
+> &lt;p&gt;Duis ac lectus nunc. Ut porta vestibulum placerat.&lt;/p&gt;  
+> &lt;p&gt;Curabitur ullamcorper urna sed magna rhoncus, in accumsan ante congue.&lt;/p&gt;  
 
-Blobator template images look like the following example. This is a tileset with tiles of size 32.
+## Options
 
-![Blob tileset template example](example.png)
+This script creates a global Reparagrapher object. The Reparagrapher.options property can be used to modify the following options:
 
-### Template JSON Example ##
+* __removeBrNodes__: removes all BR elements, defaults to true
+* __removeEmptyTextNodes__: removes text nodes that contain only whitespace, defaults to true
+* __className__: CSS class name to add to paragraph elements for styling, defaults to 'reparagraph'
+* __nonParagraphElements__: array of HTML elements that are not wrapped, defaults to "A", "P", and "DIV" (elements should generally be in caps)
+* __paragraphOverflowCount__: in case of bugs, prevents infinite loops and paragraphs, taking up all memory and crashing the user's system, defaults to 16384
+* __paragraphElementType__: the element that is created for a paragraph using document.createElement, defaults to "p"
 
-Blobator tileset JSON contain three parts of information:
+You can also change multiple options at once by calling Reparagrapher.init with an object containing options you wish to change, for example:
 
-* "image": The image filename to use for this tileset.
-* "bits": A section describing which 8 values are used to create a single 0-255 tile index using neighboring tiles.
-* "tiles": A section describing all tiles in this tileset, including their location in the image and which indices correspond to the tile.
-
-It is formatted like the below excerpt of [example.json](example.json).
-
-```json
-{
-  "image": "blob.png",
-  "bits": {
-    "topLeft": 1,
-    "top": 2,
-    "topRight": 4,
-    "right": 8,
-    "bottomRight": 16,
-    "bottom": 32,
-    "bottomLeft": 64,
-    "left": 128
-  },
-  "tiles": [
-    {
-      "source": {
-        "x": 0, "y": 0, "width": 32, "height": 32
-      },
-      "indices": [
-        0, 1, 4, 5, 16, 17, 20, 21, 64, 
-        65, 68, 69, 80, 81, 84, 85
-      ]
-    }
-  ]
-}
+```javascript
+Reparagrapher.init({
+  "className": "textBox",
+  "paragraphElementType": "div",
+  "nonParagraphElements": [ "P", "DIV" ]
+});
 ```
 
-## Code Example
+## Events
 
-Blobator can be used as a C# library by adding a reference to 'Blobator.exe':
+Reparagrapher has the following events you can set.
 
-```csharp
-Blobator.Generator.Generate(32, "blobtest");
-```
+### onParagraph(element, options)
 
-A file 'BlobTileset.cs' is also included with blobator. This file can be included in your projects directly, or the BlobTileset class can be used by referencing 'Blobator.exe'. This class is designed to ease loading and managing tileset blobs generated by blobator. To implement, subclass BlobTileset, passing it an image type and a type that contains your image regions, and implement the LoadImage and LoadRegion functions, for example:
+Called after a paragraph is created but before it is added to the document.
 
-```csharp
-using Blobator.Tileset;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
+__Arguments__:
 
-namespace BlobatorExample {
-    public class ExampleTileset : BlobTileset<Bitmap, Rectangle> {
-        protected override Bitmap LoadImage(string path) {
-            return Bitmap.FromFile(path) as Bitmap;
-        }
+* element: the paragraph element that was created
+* options: the current reparagraphing options
 
-        protected override Rectangle LoadRegion(Bitmap image, int x, int y, int width, int height) {
-            return new Rectangle(x, y, width, height);
-        }
-
-        public ExampleTileset(string path)
-            : base(path) {
-        }
-
-        public ExampleTileset(Dictionary<string, dynamic> json)
-            : base(json) {
-        }
-    }
-}
-```
-
-You can then load and use tilesets in the following way:
-
-```csharp
-var tileset = new ExampleTileset("example.json"); // load the tileset from json
-var image = tileset.Image; // the base tileset image
-
-var region = tileset[0]; // the region for tile index zero
-region = tileset.GetTile(5); // alternate way of indexing
-
-region = tileset[
-    tileset.IndexFromTiles(true, false, true, true, true, false, true, true)
-]; // get region for tile index corresponding to specified neighbors
-region = tileset.GetTile( // get region from specified neighbors directly
-    true, false, true, true, true, false, true, true);
-```
-
-Keep in mind that when returning a region BlobTileset may return the default value for this type (or null if it is a nullable type) if the index is out of range or the supplied region cannot be found. All blobator tilesets should have a region corresponding to every index in the 0 through 255 range, and so should generally return a valid region. However, there are safer overloads that can be used instead to test if the region is a valid value:
-
-```csharp
-// this index is out of range and will cause GetTile to return false
-if (!tileset.GetTile(-5, out region)) {
-    Console.WriteLine("Not a valid region");
-}
-else {
-    // render image
-}
-```
-
-A similar overload for GetTile taking 8 boolean values also exists.
-
-For nullable types the following code could also be used:
-
-```csharp
-// this index is out of range and will return null if TRegion is nullable
-if (tileset[-5] == null) {
-    Console.WriteLine("Not a valid region");
-}
-else {
-    // render image
-}
-```
-
-## XML Output and Support
-
-Blobator also supports the XML format. In order to output to XML format use the '-xml' command line option. XML files are structured similarly to the JSON created by Blobator. XML files are also supported by the BlobTileset class by including the 'BlobTileset.Xml.cs' file as well as the standard 'BlobTileset.cs' file. To load the 'ExampleTileset' class from the example above from XML you could use the following code:
-
-```csharp
-var tileset = new ExampleTileset(BlobTileset.FromXmlFile("example.xml"));
-```
-
-For more details please see [example.xml](example.xml).
-
-## Motivation
-
-While using the bitwise style of indexing using tile neighbors to figure out which tile to draw is an efficient way of rendering tiles, the implementation of both art assets as well as code can be finnicky. Blobabor exists to ease this process.
-
-## Tests
-
-Blobator comes with a suite of tests designed to test the utility's output and BlobTileset's handling of it. To run this simply run the BlobaborTest project.
-
-## Contributors
-
-Contributions are welcome, particularly implementations of the BlobTileset class for other languages.
-
-For more information you can contact Eniko at [@Enichan](https://twitter.com/Enichan) on Twitter.
-
-## License
-
-Blobator is licensed under the MIT License.
+__Return value__:  
+The element to be added to the document, or no return value
